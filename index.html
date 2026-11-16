@@ -1,0 +1,748 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f5f5f0">
+  <title>Keyroom — RSA made hands-on</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --paper: #f5f5f0;
+      --surface: #fffefa;
+      --ink: #18251f;
+      --muted: #68736d;
+      --line: #dfe4dc;
+      --green: #1c6b52;
+      --green-dark: #14553f;
+      --mint: #dceee4;
+      --lime: #c9f36a;
+      --blue: #4966e9;
+      --blue-pale: #edf0ff;
+      --coral: #cc694f;
+      --shadow: 0 20px 60px rgba(30, 48, 38, .08);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      font-synthesis: none;
+      text-rendering: optimizeLegibility;
+    }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body { margin: 0; color: var(--ink); background: var(--paper); }
+    button, input, textarea { font: inherit; }
+    button, a { -webkit-tap-highlight-color: transparent; }
+    a { color: inherit; }
+    .wrap { width: min(1160px, calc(100% - 48px)); margin: 0 auto; }
+    .site-header { height: 78px; display: flex; align-items: center; border-bottom: 1px solid rgba(24,37,31,.09); }
+    .header-inner { display: flex; align-items: center; justify-content: space-between; gap: 24px; }
+    .brand { display: inline-flex; align-items: center; gap: 11px; text-decoration: none; font-size: 15px; font-weight: 760; letter-spacing: -.045em; }
+    .brand-mark { width: 34px; height: 34px; display: grid; place-items: center; color: white; background: var(--green); border-radius: 11px; }
+    .brand-mark svg { width: 18px; height: 18px; }
+    .brand small { display: block; margin-top: 1px; color: var(--muted); font-size: 9px; font-weight: 700; letter-spacing: .15em; text-transform: uppercase; }
+    .nav { display: flex; align-items: center; gap: 30px; }
+    .nav a { color: #53625a; text-decoration: none; font-size: 12px; font-weight: 650; }
+    .nav a:hover { color: var(--green); }
+    .nav .nav-cta { padding: 11px 16px; color: white; background: var(--ink); border-radius: 8px; }
+    .nav .nav-cta:hover { color: white; background: var(--green); }
+    .hero { position: relative; overflow: hidden; padding: 70px 0 55px; }
+    .hero:after { position: absolute; z-index: -1; top: 5px; right: -100px; width: 440px; height: 440px; border: 1px solid rgba(28,107,82,.11); border-radius: 50%; box-shadow: 0 0 0 48px rgba(28,107,82,.025), 0 0 0 96px rgba(28,107,82,.025), 0 0 0 144px rgba(28,107,82,.025); content: ""; }
+    .eyebrow { display: inline-flex; align-items: center; gap: 8px; color: var(--green); font-size: 10px; font-weight: 800; letter-spacing: .16em; text-transform: uppercase; }
+    .eyebrow-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--lime); box-shadow: 0 0 0 4px rgba(201,243,106,.3); }
+    h1 { max-width: 750px; margin: 20px 0 17px; font-family: Georgia, "Times New Roman", serif; font-size: clamp(44px, 6vw, 76px); font-weight: 400; letter-spacing: -.06em; line-height: .99; }
+    h1 em { color: var(--green); font-weight: 400; }
+    .hero-copy { max-width: 560px; margin: 0; color: var(--muted); font-size: 15px; line-height: 1.7; }
+    .hero-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 12px; margin-top: 28px; }
+    .button { min-height: 43px; display: inline-flex; align-items: center; justify-content: center; gap: 9px; padding: 0 17px; border: 1px solid transparent; border-radius: 8px; cursor: pointer; font-size: 12px; font-weight: 730; text-decoration: none; transition: transform .16s ease, background .16s ease, border-color .16s ease; }
+    .button:hover { transform: translateY(-1px); }
+    .button-primary { color: #fff; background: var(--green); }
+    .button-primary:hover { background: var(--green-dark); }
+    .button-dark { color: #fff; background: var(--ink); }
+    .button-dark:hover { background: #26372f; }
+    .button-light { color: var(--ink); background: var(--surface); border-color: var(--line); }
+    .button-light:hover { border-color: #a6b8ac; }
+    .button-small { min-height: 35px; padding: 0 12px; font-size: 11px; }
+    .button svg { width: 15px; height: 15px; }
+    .hero-meta { display: flex; flex-wrap: wrap; gap: 22px; margin-top: 29px; color: #65746b; font-size: 10px; font-weight: 630; }
+    .hero-meta span { display: inline-flex; align-items: center; gap: 7px; }
+    .hero-meta svg { width: 14px; height: 14px; color: var(--green); }
+    .flow { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; padding-bottom: 58px; }
+    .flow-step { position: relative; display: flex; align-items: center; gap: 14px; min-height: 78px; padding: 15px 18px; background: rgba(255,254,250,.72); border: 1px solid var(--line); border-radius: 12px; }
+    .flow-number { width: 32px; height: 32px; flex: 0 0 32px; display: grid; place-items: center; color: var(--green); background: var(--mint); border-radius: 50%; font-size: 11px; font-weight: 800; }
+    .flow-step strong { display: block; font-size: 12px; }
+    .flow-step small { display: block; margin-top: 4px; color: var(--muted); font-size: 10px; }
+    .section-heading { display: flex; align-items: end; justify-content: space-between; gap: 20px; margin: 0 0 19px; }
+    .section-heading h2 { margin: 8px 0 0; font-family: Georgia, "Times New Roman", serif; font-size: clamp(28px, 3vw, 39px); font-weight: 400; letter-spacing: -.045em; }
+    .section-heading p { max-width: 330px; margin: 0 0 4px; color: var(--muted); font-size: 12px; line-height: 1.6; }
+    .workspace { padding: 52px 0 70px; background: #e9eee8; border-top: 1px solid #e0e6dd; border-bottom: 1px solid #e0e6dd; }
+    .workspace-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; align-items: stretch; }
+    .panel { min-width: 0; padding: 23px; background: var(--surface); border: 1px solid #e2e6df; border-radius: 15px; box-shadow: 0 8px 24px rgba(30,48,38,.035); }
+    .panel-wide { grid-column: 1 / -1; }
+    .panel-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; margin-bottom: 18px; }
+    .panel-title { display: flex; align-items: center; gap: 11px; }
+    .panel-icon { width: 36px; height: 36px; display: grid; place-items: center; color: var(--green); background: var(--mint); border-radius: 10px; }
+    .panel-icon.blue { color: var(--blue); background: var(--blue-pale); }
+    .panel-icon svg { width: 18px; height: 18px; }
+    .panel-title h3 { margin: 0; font-size: 14px; letter-spacing: -.02em; }
+    .panel-title p { margin: 4px 0 0; color: var(--muted); font-size: 10px; }
+    .step-tag { padding: 6px 8px; color: #65746b; background: #f1f4ef; border-radius: 6px; font-size: 9px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
+    .key-controls { display: flex; align-items: center; flex-wrap: wrap; gap: 9px; }
+    .key-help { margin: 13px 0 0; color: var(--muted); font-size: 10px; line-height: 1.6; }
+    .key-results { display: none; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 18px; }
+    .key-results.visible { display: grid; }
+    .key-result { min-width: 0; padding: 13px; background: #f7f8f4; border: 1px solid #e8ece5; border-radius: 9px; }
+    .key-result-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 9px; }
+    .key-result-head strong { font-size: 10px; }
+    .key-result-head span { color: var(--green); font-size: 8px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; }
+    textarea, input[type="text"], input[type="password"] { width: 100%; color: var(--ink); background: #fbfcf9; border: 1px solid #dce3da; border-radius: 8px; outline: none; transition: border .16s ease, box-shadow .16s ease; }
+    textarea { min-height: 132px; padding: 12px; resize: vertical; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 10px; line-height: 1.6; overflow-wrap: anywhere; }
+    textarea:focus, input:focus { border-color: #77a891; box-shadow: 0 0 0 3px rgba(28,107,82,.1); }
+    textarea[readonly] { color: #58645e; background: #f5f7f3; }
+    textarea::placeholder, input::placeholder { color: #9aa49d; }
+    .field { margin-top: 15px; }
+    .field:first-of-type { margin-top: 0; }
+    .label-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 7px; }
+    label, .field-label { color: #3d4c43; font-size: 10px; font-weight: 750; }
+    .hint { color: #89948d; font-size: 9px; }
+    .message-box { min-height: 110px; font-family: inherit; font-size: 12px; }
+    .action-row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 12px; }
+    .status { min-height: 16px; margin: 10px 0 0; color: var(--muted); font-size: 10px; line-height: 1.5; }
+    .status.success { color: var(--green); }
+    .status.error { color: #a54634; }
+    .output-wrap { position: relative; }
+    .output-wrap textarea { padding-right: 16px; }
+    .privacy-note { display: flex; gap: 10px; margin-top: 16px; padding: 12px; color: #476253; background: #eef6ef; border: 1px solid #dfecdf; border-radius: 9px; font-size: 9px; line-height: 1.6; }
+    .privacy-note svg { width: 15px; height: 15px; flex: 0 0 15px; margin-top: 1px; }
+    .private-warning { color: #80503b; background: #fbf0e8; border-color: #f3e0d1; }
+    .guide { padding: 66px 0 72px; }
+    .guide-grid { display: grid; grid-template-columns: .9fr 1.1fr; gap: 40px; align-items: start; }
+    .guide-intro h2 { margin: 10px 0 13px; font-family: Georgia, "Times New Roman", serif; font-size: 40px; font-weight: 400; letter-spacing: -.05em; line-height: 1.06; }
+    .guide-intro p { max-width: 380px; color: var(--muted); font-size: 12px; line-height: 1.75; }
+    .concept-list { display: grid; gap: 10px; }
+    .concept { display: grid; grid-template-columns: 34px 1fr; gap: 12px; padding: 14px; background: rgba(255,254,250,.65); border: 1px solid var(--line); border-radius: 10px; }
+    .concept-num { color: var(--green); font-family: Georgia, serif; font-size: 18px; }
+    .concept strong { display: block; font-size: 11px; }
+    .concept p { margin: 5px 0 0; color: var(--muted); font-size: 10px; line-height: 1.6; }
+    .notice { margin-top: 18px; padding: 14px 16px; color: #6c5745; background: #f7efe4; border: 1px solid #efe3d4; border-radius: 10px; font-size: 10px; line-height: 1.7; }
+    .notice strong { color: #4f3926; }
+    footer { padding: 21px 0; color: #758078; border-top: 1px solid var(--line); font-size: 9px; }
+    .footer-inner { display: flex; align-items: center; justify-content: space-between; gap: 14px; }
+    .footer-inner a { color: var(--green); text-decoration: none; }
+    .toast { position: fixed; z-index: 10; right: 22px; bottom: 22px; max-width: min(390px, calc(100% - 44px)); padding: 12px 16px; color: white; background: var(--ink); border-radius: 9px; box-shadow: var(--shadow); font-size: 11px; opacity: 0; pointer-events: none; transform: translateY(8px); transition: .2s ease; }
+    .toast.show { opacity: 1; transform: translateY(0); }
+    .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
+    @media (max-width: 760px) {
+      .wrap { width: min(100% - 32px, 600px); }
+      .site-header { height: 66px; }
+      .nav { gap: 14px; }
+      .nav a { font-size: 10px; }
+      .nav .nav-cta { padding: 9px 11px; }
+      .hero { padding: 54px 0 43px; }
+      .hero:after { top: 100px; right: -300px; }
+      .flow { padding-bottom: 42px; }
+      .flow-step { align-items: flex-start; min-height: 90px; padding: 13px; gap: 10px; }
+      .flow-step small { line-height: 1.4; }
+      .workspace { padding: 42px 0 52px; }
+      .guide-grid { grid-template-columns: 1fr; gap: 23px; }
+      .guide { padding: 50px 0; }
+    }
+    @media (max-width: 540px) {
+      .wrap { width: calc(100% - 28px); }
+      .nav { gap: 10px; }
+      .nav a { font-size: 9px; }
+      .nav .nav-cta { padding: 9px 10px; }
+      .brand { gap: 8px; font-size: 13px; }
+      .brand-mark { width: 30px; height: 30px; border-radius: 9px; }
+      .hero { padding-top: 45px; }
+      h1 { font-size: 48px; }
+      .hero-copy { font-size: 13px; }
+      .hero-meta { gap: 11px 17px; font-size: 9px; }
+      .flow { grid-template-columns: 1fr; gap: 8px; }
+      .flow-step { min-height: auto; align-items: center; }
+      .workspace-grid { grid-template-columns: 1fr; }
+      .panel-wide { grid-column: auto; }
+      .panel { padding: 17px; }
+      .key-results { grid-template-columns: 1fr; }
+      .section-heading { display: block; }
+      .section-heading p { margin-top: 9px; }
+      .guide-intro h2 { font-size: 35px; }
+      .footer-inner { align-items: flex-start; flex-direction: column; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; }
+    }
+    /* Keep the project focused on the three actions visitors came to use. */
+    .hero { padding: 38px 0 28px; }
+    .hero:after, .hero-meta, .flow, .guide { display: none; }
+    .hero h1 { max-width: 620px; margin: 12px 0; font-size: clamp(36px, 5vw, 54px); }
+    .hero-copy { max-width: 700px; font-size: 13px; }
+    .hero-actions { margin-top: 18px; }
+    .workspace { padding: 30px 0 48px; }
+    .section-heading { margin-bottom: 14px; }
+    .section-heading p { display: none; }
+    .workspace-grid { grid-template-columns: 1fr; gap: 10px; }
+    .panel, .panel-wide { grid-column: auto; padding: 17px 19px; }
+    .panel-head { margin-bottom: 12px; }
+    .panel-title p { display: none; }
+    .panel-icon { width: 30px; height: 30px; }
+    .step-tag { padding: 5px 7px; }
+    .key-help, .hint { font-size: 9px; }
+    #encrypt .field, #decrypt .field { margin-top: 10px; }
+    #encrypt textarea, #decrypt textarea { min-height: 84px; }
+    #encrypt .message-box, #decrypt .message-box { min-height: 74px; }
+    .privacy-note { margin-top: 10px; }
+    .demo-panel { margin: 0 0 12px; padding: 17px 19px; background: #f0f4ed; border: 1px solid #dce6da; border-radius: 13px; }
+    .demo-top { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 12px; }
+    .demo-top h3 { margin: 0; font-size: 14px; }
+    .demo-top p { margin: 4px 0 0; color: var(--muted); font-size: 10px; }
+    .demo-steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+    .demo-step { display: flex; align-items: center; gap: 9px; padding: 10px; background: rgba(255,255,255,.72); border: 1px solid #dfe7dc; border-radius: 8px; }
+    .demo-step .button { min-height: 32px; padding: 0 10px; white-space: nowrap; }
+    .demo-step span { color: #53625a; font-size: 9px; line-height: 1.4; }
+    .demo-status { min-height: 14px; margin: 9px 0 0; color: var(--green); font-size: 10px; }
+    .mode-tabs { display: flex; gap: 7px; margin: 0 0 14px; padding: 5px; width: fit-content; background: #e6ebe4; border-radius: 10px; }
+    .mode-tab { padding: 10px 15px; color: #59665e; background: transparent; border: 0; border-radius: 7px; cursor: pointer; font-size: 11px; font-weight: 750; }
+    .mode-tab[aria-selected="true"] { color: white; background: var(--green); box-shadow: 0 2px 6px rgba(24,37,31,.14); }
+    .mode-view[hidden] { display: none; }
+    @media (max-width: 700px) { .demo-steps { grid-template-columns: 1fr; } .demo-step { justify-content: space-between; } }
+    @media (max-width: 540px) {
+      .hero { padding: 30px 0 24px; }
+      .hero h1 { font-size: 39px; }
+      .workspace { padding: 24px 0 36px; }
+      .panel, .panel-wide { padding: 15px; }
+    }
+  </style>
+</head>
+<body>
+  <header class="site-header">
+    <div class="wrap header-inner">
+      <a class="brand" href="#top" aria-label="Keyroom home">
+        <span class="brand-mark" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><path d="M14.5 8.5a4 4 0 1 0-3.8 5.25L13 16h2v2h2v-2h2v-2.2l-3.5-3.5a4 4 0 0 0-1-3.8Z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M8.5 8.5h.01" stroke="currentColor" stroke-width="3" stroke-linecap="round"/></svg></span>
+        <span>keyroom<small>RSA, made hands-on</small></span>
+      </a>
+      <nav class="nav" aria-label="Main navigation">
+        <a href="#keys">Create keys</a>
+        <a href="#encrypt">Encrypt</a>
+        <a href="#decrypt">Decrypt</a>
+        <a class="nav-cta" href="#keys">Try it out <span aria-hidden="true">↗</span></a>
+      </nav>
+    </div>
+  </header>
+
+  <main id="top">
+    <section class="hero wrap" aria-labelledby="hero-title">
+      <span class="eyebrow"><span class="eyebrow-dot"></span> RSA message tool</span>
+      <h1 id="hero-title">Encrypt. <em>Decrypt.</em></h1>
+      <p class="hero-copy">Encrypt with someone’s public key. Decrypt with the matching private key.</p>
+      <div class="hero-actions">
+        <a class="button button-primary" href="#keys">Create a key pair <span aria-hidden="true">→</span></a>
+        <a class="button button-light" href="#encrypt">Go to message</a>
+      </div>
+      <div class="hero-meta" aria-label="Website properties">
+        <span><svg viewBox="0 0 20 20" fill="none"><path d="M10 2.5 3.5 5v4.4c0 4.1 2.8 6.7 6.5 8.1 3.7-1.4 6.5-4 6.5-8.1V5L10 2.5Z" stroke="currentColor" stroke-width="1.5"/><path d="m7 10 2 2 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>Keys stay in this browser</span>
+        <span><svg viewBox="0 0 20 20" fill="none"><rect x="3" y="4" width="14" height="12" rx="2" stroke="currentColor" stroke-width="1.5"/><path d="M6.5 8h7M6.5 11h4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>No account needed</span>
+        <span><svg viewBox="0 0 20 20" fill="none"><path d="M10 2.5 3.5 5v4.4c0 4.1 2.8 6.7 6.5 8.1 3.7-1.4 6.5-4 6.5-8.1V5L10 2.5Z" stroke="currentColor" stroke-width="1.5"/><path d="M7 10h6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>Nothing uploaded</span>
+      </div>
+    </section>
+
+    <section class="wrap flow" aria-label="Encryption workflow">
+      <div class="flow-step"><span class="flow-number">01</span><span><strong>Create your keys</strong><small>Keep the private key. Share the public one.</small></span></div>
+      <div class="flow-step"><span class="flow-number">02</span><span><strong>Encrypt for someone</strong><small>Use their public key to lock a message.</small></span></div>
+      <div class="flow-step"><span class="flow-number">03</span><span><strong>Open it with your key</strong><small>Only the matching private key can decrypt it.</small></span></div>
+    </section>
+
+    <section class="workspace" aria-labelledby="workspace-title">
+      <div class="wrap">
+        <div class="section-heading">
+          <div><span class="eyebrow">The workbench</span><h2 id="workspace-title">Put RSA to work.</h2></div>
+          <p>Run each step right here. Keys and messages are processed locally in your browser.</p>
+        </div>
+        <div class="mode-tabs" role="tablist" aria-label="Choose an RSA tool">
+          <button class="mode-tab" id="encryption-tab" type="button" role="tab" aria-controls="encryption-view" aria-selected="true">Encryption</button>
+          <button class="mode-tab" id="signature-tab" type="button" role="tab" aria-controls="signature-view" aria-selected="false">Digital signatures</button>
+        </div>
+        <div class="mode-view" id="encryption-view" role="tabpanel" aria-labelledby="encryption-tab">
+        <section class="demo-panel" aria-labelledby="demo-title">
+          <div class="demo-top">
+            <div><h3 id="demo-title">Try it with Rohin &amp; Khalifa</h3><p>Follow the full exchange without copying keys between forms.</p></div>
+          </div>
+          <div class="demo-steps">
+            <div class="demo-step"><button class="button button-light button-small" id="demo-setup" type="button">1 · Rohin creates keys</button><span>Public key for Khalifa; private key stays with Rohin.</span></div>
+            <div class="demo-step"><button class="button button-light button-small" id="demo-encrypt" type="button" disabled>2 · Khalifa encrypts</button><span>Khalifa uses Rohin’s public key.</span></div>
+            <div class="demo-step"><button class="button button-light button-small" id="demo-decrypt" type="button" disabled>3 · Rohin decrypts</button><span>Rohin uses his private key.</span></div>
+          </div>
+          <p class="demo-status" id="demo-status" aria-live="polite">Start with Rohin creating a key pair.</p>
+        </section>
+        <div class="workspace-grid">
+          <section class="panel panel-wide" id="keys" aria-labelledby="keys-title">
+            <div class="panel-head">
+              <div class="panel-title">
+                <span class="panel-icon"><svg viewBox="0 0 24 24" fill="none"><circle cx="8.5" cy="15.5" r="4.5" stroke="currentColor" stroke-width="1.7"/><path d="m12 12 8-8m-3 3 2 2m-5 1 2 2" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+                <span><h3 id="keys-title">1. Create your keys</h3><p>Your public key is for sharing. Your private key is yours to protect.</p></span>
+              </div>
+              <span class="step-tag">Step 01</span>
+            </div>
+            <div class="key-controls">
+              <button class="button button-primary" id="generate-button" type="button"><svg viewBox="0 0 20 20" fill="none"><path d="M10 4v12M4 10h12" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>Generate RSA keys</button>
+              <span class="hint">2048-bit · RSA-OAEP · SHA-256</span>
+            </div>
+            <p class="status" id="key-status" aria-live="polite">Generate a pair, then share the public key with anyone who wants to send you a message.</p>
+            <div class="key-results" id="key-results">
+              <div class="key-result">
+                <div class="key-result-head"><strong>Public key</strong><span>Share this</span></div>
+                <textarea id="generated-public" readonly aria-label="Generated public key"></textarea>
+                <div class="action-row"><button class="button button-light button-small" id="copy-public" type="button">Copy public key</button><button class="button button-light button-small" id="download-public" type="button">Download .pem</button></div>
+              </div>
+              <div class="key-result">
+                <div class="key-result-head"><strong>Private key</strong><span>Keep secret</span></div>
+                <textarea id="generated-private" readonly aria-label="Generated private key" placeholder="Your private key is hidden here until you choose to reveal it." style="display:none"></textarea>
+                <div class="action-row"><button class="button button-light button-small" id="reveal-private" type="button">Reveal private key</button><button class="button button-light button-small" id="download-private" type="button">Download .pem</button></div>
+              </div>
+            </div>
+            <div class="privacy-note private-warning" id="private-warning" style="display:none"><svg viewBox="0 0 20 20" fill="none"><path d="M10 2.5 2.8 16h14.4L10 2.5Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><path d="M10 7v4m0 2.2v.1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg><span><strong>Protect your private key.</strong> The downloaded .pem file is not password-protected. Anyone who gets it can decrypt messages meant for this key pair.</span></div>
+          </section>
+        </div>
+        <div class="workspace-grid">
+          <section class="panel" id="encrypt" aria-labelledby="encrypt-title">
+            <div class="panel-head">
+              <div class="panel-title">
+                <span class="panel-icon blue"><svg viewBox="0 0 24 24" fill="none"><rect x="4" y="10" width="16" height="11" rx="2" stroke="currentColor" stroke-width="1.7"/><path d="M8 10V7a4 4 0 0 1 8 0v3m-4 5v2" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg></span>
+                <span><h3 id="encrypt-title">2. Encrypt a message</h3><p>Use the recipient’s public key.</p></span>
+              </div>
+              <span class="step-tag">Step 02</span>
+            </div>
+            <div class="field">
+              <div class="label-row"><label for="recipient-public">Recipient’s public key</label><span class="hint">Public key encrypts the message</span></div>
+              <textarea id="recipient-public" aria-label="Recipient public key" placeholder="Paste the recipient’s public key here"></textarea>
+            </div>
+            <div class="field">
+              <div class="label-row"><label for="message">Your message</label><span class="hint">Plain text</span></div>
+              <textarea class="message-box" id="message" aria-label="Message to encrypt" placeholder="Write a message for the recipient…"></textarea>
+            </div>
+            <div class="action-row"><button class="button button-dark" id="encrypt-button" type="button">Encrypt message <span aria-hidden="true">→</span></button><button class="button button-light button-small" id="fill-own-public" type="button" title="Use the public key generated above">Demo with my public key</button></div>
+            <p class="status" id="encrypt-status" aria-live="polite"></p>
+            <div class="field output-wrap">
+              <div class="label-row"><span class="field-label">Encrypted package</span><span class="hint">Share this with the recipient</span></div>
+              <textarea id="ciphertext-output" readonly aria-label="Encrypted message package" placeholder="Your encrypted package will appear here."></textarea>
+              <div class="action-row"><button class="button button-light button-small" id="copy-ciphertext" type="button">Copy package</button><button class="button button-light button-small" id="download-ciphertext" type="button">Download .txt</button></div>
+            </div>
+          </section>
+          <section class="panel" id="decrypt" aria-labelledby="decrypt-title">
+            <div class="panel-head">
+              <div class="panel-title">
+                <span class="panel-icon"><svg viewBox="0 0 24 24" fill="none"><rect x="4" y="10" width="16" height="11" rx="2" stroke="currentColor" stroke-width="1.7"/><path d="M8 10V7a4 4 0 0 1 8 0v3m-4 5v2" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/><path d="m8.5 15 1.2 1.2 2.2-2.4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+                <span><h3 id="decrypt-title">3. Decrypt a message</h3><p>Use the matching private key.</p></span>
+              </div>
+              <span class="step-tag">Step 03</span>
+            </div>
+            <div class="field">
+              <div class="label-row"><label for="private-input">Recipient’s private key</label><span class="hint">Private key decrypts the message</span></div>
+              <textarea id="private-input" aria-label="Private key for decryption" placeholder="Paste the recipient’s private .pem key here"></textarea>
+              <div class="action-row"><button class="button button-light button-small" id="use-generated-button" type="button" disabled>Use private key generated above</button><span class="hint">For a demo with your own key pair</span></div>
+            </div>
+            <div class="field">
+              <div class="label-row"><label for="ciphertext-input">Encrypted package</label><span class="hint">Filled automatically after encryption</span></div>
+              <textarea id="ciphertext-input" aria-label="Encrypted message package" placeholder="Paste the encrypted package here…"></textarea>
+            </div>
+            <div class="action-row"><button class="button button-primary" id="decrypt-button" type="button">Decrypt message <span aria-hidden="true">→</span></button></div>
+            <p class="status" id="decrypt-status" aria-live="polite"></p>
+            <div class="field">
+              <div class="label-row"><span class="field-label">Decrypted message</span></div>
+              <textarea class="message-box" id="plaintext-output" readonly aria-label="Decrypted message" placeholder="The decrypted message will appear here."></textarea>
+            </div>
+          </section>
+        </div>
+        </div>
+        <div class="mode-view" id="signature-view" role="tabpanel" aria-labelledby="signature-tab" hidden>
+        <section class="panel" id="signature-demo" aria-labelledby="signature-title">
+          <div class="panel-head">
+            <div class="panel-title">
+              <span class="panel-icon blue"><svg viewBox="0 0 24 24" fill="none"><path d="M4 17.5c2.7-3.3 4.8-4.2 6-2.5 1.1 1.5-1.3 4.3-2.6 3.4-1.1-.8.6-4.2 3.5-7.1 3.3-3.3 5.6-4.6 6.4-3.8.9.9-.6 3.4-2.2 5.3-1.2 1.5-2.8 3.6-1.7 4.4.8.6 2.1-.2 3.2-1.2" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><path d="m16.5 5.5 2 2" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></span>
+              <span><h3 id="signature-title">Digital signatures: Rohin signs, Khalifa verifies</h3><p>Signing shows who sent a message and whether it changed. It does not hide the message.</p></span>
+            </div>
+          </div>
+          <div class="action-row"><button class="button button-light button-small" id="signature-generate" type="button">Generate signing keys</button><span class="hint">Separate from the encryption keys above</span></div>
+          <p class="status" id="signature-status" aria-live="polite">Generate a signing key pair to begin.</p>
+          <div class="workspace-grid" style="margin-top:10px">
+            <div>
+              <div class="field">
+                <div class="label-row"><label for="signature-private">Rohin’s private signing key</label></div>
+                <textarea id="signature-private" aria-label="Rohin's private signing key" placeholder="Use the button to put the generated private key here"></textarea>
+                <div class="action-row"><button class="button button-light button-small" id="signature-use-private" type="button" disabled>Use Rohin’s private key</button></div>
+              </div>
+              <div class="field">
+                <div class="label-row"><label for="signature-message">Message to sign</label></div>
+                <textarea class="message-box" id="signature-message" aria-label="Message to sign" placeholder="Write a message Rohin will sign…"></textarea>
+              </div>
+              <div class="action-row"><button class="button button-dark" id="sign-button" type="button">Rohin signs message</button></div>
+            </div>
+            <div>
+              <div class="field">
+                <div class="label-row"><label for="signature-public">Rohin’s public key</label><span class="hint">Khalifa uses this to verify</span></div>
+                <textarea id="signature-public" aria-label="Rohin's public signing key" placeholder="Generate signing keys first"></textarea>
+              </div>
+              <div class="field">
+                <div class="label-row"><label for="signature-output">Signature</label></div>
+                <textarea id="signature-output" aria-label="Digital signature" placeholder="Rohin’s signature will appear here"></textarea>
+              </div>
+              <div class="action-row"><button class="button button-primary" id="verify-button" type="button" disabled>Khalifa verifies signature</button></div>
+            </div>
+          </div>
+        </section>
+        </div>
+      </div>
+    </section>
+
+    <section class="guide" id="how-it-works">
+      <div class="wrap guide-grid">
+        <div class="guide-intro">
+          <span class="eyebrow">The idea behind the keys</span>
+          <h2>One key locks.<br>One key opens.</h2>
+          <p>RSA is public-key cryptography. You can publish one key openly while keeping its paired key private. The pair lets people send you protected messages without first sharing a secret password.</p>
+          <div class="notice"><strong>For learning and demos.</strong> This website is an educational tool. Use established, reviewed software for sensitive or production communication.</div>
+        </div>
+        <div class="concept-list">
+          <article class="concept"><span class="concept-num">01</span><span><strong>Create a matched pair</strong><p>Your browser generates a public key and its corresponding private key. The public key can be shared freely; protect the private one.</p></span></article>
+          <article class="concept"><span class="concept-num">02</span><span><strong>Encrypt for the recipient</strong><p>A sender uses the recipient’s public key. Only the matching private key can recover the message.</p></span></article>
+          <article class="concept"><span class="concept-num">03</span><span><strong>Use RSA and AES together</strong><p>RSA-OAEP wraps a fresh AES key, and AES-GCM encrypts the message. This hybrid approach handles longer messages while keeping the public-key step small.</p></span></article>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer><div class="wrap footer-inner"><span>keyroom · An educational RSA project</span><span>Cryptography runs in your browser · <a href="#top">Back to top ↑</a></span></div></footer>
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <script>
+    (() => {
+      const $ = (id) => document.getElementById(id);
+      const encoder = new TextEncoder();
+      const decoder = new TextDecoder();
+      let generatedPublicKey = null;
+      let generatedPublicPem = "";
+      let generatedPrivatePem = "";
+      let signaturePrivatePem = "";
+      let toastTimer;
+
+      function setStatus(id, message, kind = "") {
+        const node = $(id);
+        node.textContent = message;
+        node.className = `status${kind ? ` ${kind}` : ""}`;
+      }
+
+      function toast(message) {
+        const node = $("toast");
+        node.textContent = message;
+        node.classList.add("show");
+        clearTimeout(toastTimer);
+        toastTimer = setTimeout(() => node.classList.remove("show"), 2600);
+      }
+
+      function pemFromBuffer(buffer, label) {
+        const bytes = new Uint8Array(buffer);
+        let binary = "";
+        for (let i = 0; i < bytes.length; i += 0x8000) {
+          binary += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
+        }
+        const base64 = btoa(binary).match(/.{1,64}/g).join("\n");
+        return `-----BEGIN ${label}-----\n${base64}\n-----END ${label}-----`;
+      }
+
+      function bufferFromPem(pem, label) {
+        const start = `-----BEGIN ${label}-----`;
+        const end = `-----END ${label}-----`;
+        const from = pem.indexOf(start);
+        const to = pem.indexOf(end);
+        if (from < 0 || to < 0 || to <= from) throw new Error(`Expected a ${label} PEM key.`);
+        const base64 = pem.slice(from + start.length, to).replace(/\s/g, "");
+        let binary;
+        try { binary = atob(base64); } catch { throw new Error("This key does not look like valid PEM text."); }
+        const bytes = new Uint8Array(binary.length);
+        for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+        return bytes;
+      }
+
+      function bytesToBase64(bytes) {
+        let binary = "";
+        for (let i = 0; i < bytes.length; i += 0x8000) {
+          binary += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
+        }
+        return btoa(binary);
+      }
+
+      function base64ToBytes(value) {
+        const binary = atob(value);
+        const bytes = new Uint8Array(binary.length);
+        for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+        return bytes;
+      }
+
+      async function copyText(text, label) {
+        if (!text) { toast("There is nothing to copy yet."); return; }
+        try {
+          await navigator.clipboard.writeText(text);
+          toast(`${label} copied.`);
+        } catch {
+          const helper = document.createElement("textarea");
+          helper.value = text;
+          helper.style.position = "fixed";
+          helper.style.opacity = "0";
+          document.body.appendChild(helper);
+          helper.select();
+          const copied = document.execCommand("copy");
+          helper.remove();
+          toast(copied ? `${label} copied.` : "Select and copy the text manually.");
+        }
+      }
+
+      function downloadText(text, filename, type = "text/plain") {
+        if (!text) { toast("There is nothing to download yet."); return; }
+        const url = URL.createObjectURL(new Blob([text], { type }));
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = filename;
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        setTimeout(() => URL.revokeObjectURL(url), 1000);
+      }
+
+      async function generateKeys() {
+        if (!crypto?.subtle) throw new Error("Secure browser cryptography is unavailable. Open this page on HTTPS or localhost in a modern browser.");
+        $("generate-button").disabled = true;
+        setStatus("key-status", "Generating your key pair in this browser…");
+        try {
+          const pair = await crypto.subtle.generateKey({
+            name: "RSA-OAEP",
+            modulusLength: 2048,
+            publicExponent: new Uint8Array([1, 0, 1]),
+            hash: "SHA-256"
+          }, true, ["encrypt", "decrypt"]);
+          generatedPublicKey = pair.publicKey;
+          generatedPublicPem = pemFromBuffer(await crypto.subtle.exportKey("spki", pair.publicKey), "PUBLIC KEY");
+          generatedPrivatePem = pemFromBuffer(await crypto.subtle.exportKey("pkcs8", pair.privateKey), "PRIVATE KEY");
+          $("generated-public").value = generatedPublicPem;
+          $("generated-private").value = generatedPrivatePem;
+          $("generated-private").style.display = "none";
+          $("reveal-private").textContent = "Reveal private key";
+          $("key-results").classList.add("visible");
+          $("private-warning").style.display = "none";
+          $("use-generated-button").disabled = false;
+          setStatus("key-status", "Key pair ready. Share the public key; keep the private key secret.", "success");
+        } catch (error) {
+          setStatus("key-status", error.message || "Key generation failed. Try a modern browser over HTTPS.", "error");
+        } finally {
+          $("generate-button").disabled = false;
+        }
+      }
+
+      async function importPublicKey(pem) {
+        const bytes = bufferFromPem(pem, "PUBLIC KEY");
+        return crypto.subtle.importKey("spki", bytes, { name: "RSA-OAEP", hash: "SHA-256" }, false, ["encrypt"]);
+      }
+
+      async function importPrivateKey(pem) {
+        const bytes = bufferFromPem(pem, "PRIVATE KEY");
+        return crypto.subtle.importKey("pkcs8", bytes, { name: "RSA-OAEP", hash: "SHA-256" }, false, ["decrypt"]);
+      }
+
+      async function generateSignatureKeys() {
+        try {
+          $("signature-generate").disabled = true;
+          setStatus("signature-status", "Generating separate signing keys…");
+          const pair = await crypto.subtle.generateKey({
+            name: "RSA-PSS",
+            modulusLength: 2048,
+            publicExponent: new Uint8Array([1, 0, 1]),
+            hash: "SHA-256"
+          }, true, ["sign", "verify"]);
+          signaturePrivatePem = pemFromBuffer(await crypto.subtle.exportKey("pkcs8", pair.privateKey), "PRIVATE KEY");
+          $("signature-public").value = pemFromBuffer(await crypto.subtle.exportKey("spki", pair.publicKey), "PUBLIC KEY");
+          $("signature-private").value = "";
+          $("signature-use-private").disabled = false;
+          $("verify-button").disabled = false;
+          $("signature-output").value = "";
+          setStatus("signature-status", "Signing keys ready. Rohin signs with the private key; Khalifa verifies with the public key.", "success");
+        } catch (error) {
+          setStatus("signature-status", error.message || "Could not generate signing keys.", "error");
+        } finally {
+          $("signature-generate").disabled = false;
+        }
+      }
+
+      async function signMessage() {
+        try {
+          const privatePem = $("signature-private").value.trim();
+          if (!privatePem) throw new Error("Add Rohin’s private signing key first.");
+          const message = $("signature-message").value;
+          if (!message) throw new Error("Enter a message for Rohin to sign.");
+          const key = await crypto.subtle.importKey("pkcs8", bufferFromPem(privatePem, "PRIVATE KEY"), { name: "RSA-PSS", hash: "SHA-256" }, false, ["sign"]);
+          const signature = await crypto.subtle.sign({ name: "RSA-PSS", saltLength: 32 }, key, encoder.encode(message));
+          $("signature-output").value = bytesToBase64(new Uint8Array(signature));
+          setStatus("signature-status", "Signed. Khalifa can now verify the message and signature.", "success");
+        } catch (error) {
+          setStatus("signature-status", error.message || "Signing failed. Check the private key.", "error");
+        }
+      }
+
+      async function verifySignature() {
+        try {
+          const publicPem = $("signature-public").value.trim();
+          if (!publicPem) throw new Error("Enter Rohin’s public signing key.");
+          if (!$("signature-output").value.trim()) throw new Error("Enter or create a signature first.");
+          const key = await crypto.subtle.importKey("spki", bufferFromPem(publicPem, "PUBLIC KEY"), { name: "RSA-PSS", hash: "SHA-256" }, false, ["verify"]);
+          const valid = await crypto.subtle.verify({ name: "RSA-PSS", saltLength: 32 }, key, base64ToBytes($("signature-output").value.trim()), encoder.encode($("signature-message").value));
+          setStatus("signature-status", valid ? "Verified: the message matches Rohin’s signature and has not changed." : "Verification failed: the message or signature does not match.", valid ? "success" : "error");
+        } catch (error) {
+          setStatus("signature-status", error.message || "Could not verify. Check the public key and signature.", "error");
+        }
+      }
+
+      async function encryptMessage() {
+        setStatus("encrypt-status", "");
+        $("ciphertext-output").value = "";
+        try {
+          const publicPem = $("recipient-public").value.trim();
+          if (!publicPem) throw new Error("Paste the recipient’s public key first.");
+          const message = $("message").value;
+          if (!message) throw new Error("Write a message to encrypt first.");
+
+          const publicKey = await importPublicKey(publicPem);
+          const aesKey = await crypto.subtle.generateKey({ name: "AES-GCM", length: 256 }, true, ["encrypt", "decrypt"]);
+          const iv = crypto.getRandomValues(new Uint8Array(12));
+          const encryptedMessage = await crypto.subtle.encrypt({ name: "AES-GCM", iv }, aesKey, encoder.encode(message));
+          const rawAesKey = await crypto.subtle.exportKey("raw", aesKey);
+          const encryptedAesKey = await crypto.subtle.encrypt({ name: "RSA-OAEP" }, publicKey, rawAesKey);
+
+          const packageText = JSON.stringify({
+            format: "keyroom-rsa-envelope",
+            version: 1,
+            method: "RSA-OAEP-SHA256 + AES-256-GCM",
+            encryptedKey: bytesToBase64(new Uint8Array(encryptedAesKey)),
+            iv: bytesToBase64(iv),
+            ciphertext: bytesToBase64(new Uint8Array(encryptedMessage))
+          }, null, 2);
+          $("ciphertext-output").value = packageText;
+          $("ciphertext-input").value = packageText;
+          setStatus("encrypt-status", "Done. Share this package with the recipient. Only their matching private key can decrypt it.", "success");
+        } catch (error) {
+          setStatus("encrypt-status", error.message || "Encryption failed. Check the public key and try again.", "error");
+        }
+      }
+
+      async function decryptMessage() {
+        setStatus("decrypt-status", "");
+        $("plaintext-output").value = "";
+        try {
+          const privatePem = $("private-input").value.trim();
+          if (!privatePem) throw new Error("Enter the recipient’s private key before decrypting.");
+          const privateKey = await importPrivateKey(privatePem);
+
+          let envelope;
+          try { envelope = JSON.parse($("ciphertext-input").value); }
+          catch { throw new Error("The encrypted package must be complete JSON text."); }
+          if (envelope.format !== "keyroom-rsa-envelope" || envelope.version !== 1) throw new Error("This is not a Keyroom encrypted package.");
+          if (!envelope.encryptedKey || !envelope.iv || !envelope.ciphertext) throw new Error("The encrypted package is missing required data.");
+
+          const rawAesKey = await crypto.subtle.decrypt({ name: "RSA-OAEP" }, privateKey, base64ToBytes(envelope.encryptedKey));
+          const aesKey = await crypto.subtle.importKey("raw", rawAesKey, { name: "AES-GCM" }, false, ["decrypt"]);
+          const plaintext = await crypto.subtle.decrypt({ name: "AES-GCM", iv: base64ToBytes(envelope.iv) }, aesKey, base64ToBytes(envelope.ciphertext));
+          $("plaintext-output").value = decoder.decode(plaintext);
+          setStatus("decrypt-status", "Decrypted successfully with the matching private key.", "success");
+        } catch (error) {
+          const message = error instanceof Error && (error.message.startsWith("Paste ") || error.message.startsWith("This is not") || error.message.startsWith("The encrypted"))
+            ? error.message
+            : "Could not decrypt. Check that the package and private key belong together, then try again.";
+          setStatus("decrypt-status", message, "error");
+        }
+      }
+
+      $("generate-button").addEventListener("click", generateKeys);
+      $("encrypt-button").addEventListener("click", encryptMessage);
+      $("decrypt-button").addEventListener("click", decryptMessage);
+      $("signature-generate").addEventListener("click", generateSignatureKeys);
+      $("sign-button").addEventListener("click", signMessage);
+      $("verify-button").addEventListener("click", verifySignature);
+      function showMode(mode) {
+        const encryptionSelected = mode === "encryption";
+        $("encryption-view").hidden = !encryptionSelected;
+        $("signature-view").hidden = encryptionSelected;
+        $("encryption-tab").setAttribute("aria-selected", String(encryptionSelected));
+        $("signature-tab").setAttribute("aria-selected", String(!encryptionSelected));
+      }
+      $("encryption-tab").addEventListener("click", () => showMode("encryption"));
+      $("signature-tab").addEventListener("click", () => showMode("signature"));
+      $("signature-use-private").addEventListener("click", () => {
+        if (!signaturePrivatePem) { toast("Generate signing keys first."); return; }
+        $("signature-private").value = signaturePrivatePem;
+        setStatus("signature-status", "Rohin’s private signing key is now in the field.", "success");
+      });
+      $("demo-setup").addEventListener("click", async () => {
+        $("demo-status").textContent = "Alice is creating her key pair…";
+        generatedPublicPem = "";
+        generatedPrivatePem = "";
+        $("demo-encrypt").disabled = true;
+        $("demo-decrypt").disabled = true;
+        await generateKeys();
+        if (!generatedPublicPem || !generatedPrivatePem) return;
+        $("recipient-public").value = generatedPublicPem;
+        $("message").value = "Hi Alice — here is a private message from Bob.";
+        $("ciphertext-output").value = "";
+        $("ciphertext-input").value = "";
+        $("private-input").value = "";
+        $("plaintext-output").value = "";
+        $("demo-encrypt").disabled = false;
+        $("demo-decrypt").disabled = true;
+        $("demo-status").textContent = "Alice’s public key is ready. Bob can use it to encrypt a message.";
+      });
+      $("demo-encrypt").addEventListener("click", async () => {
+        if (!generatedPublicPem) { $("demo-status").textContent = "Start the demo first."; return; }
+        $("demo-status").textContent = "Bob is encrypting with Alice’s public key…";
+        await encryptMessage();
+        if ($("ciphertext-output").value) {
+          $("demo-decrypt").disabled = false;
+          $("demo-status").textContent = "Bob’s encrypted package is ready. Alice still needs her private key to read it.";
+        }
+      });
+      $("demo-decrypt").addEventListener("click", async () => {
+        if (!generatedPrivatePem || !$("ciphertext-output").value) { $("demo-status").textContent = "Set up the demo and encrypt a message first."; return; }
+        $("private-input").value = generatedPrivatePem;
+        $("ciphertext-input").value = $("ciphertext-output").value;
+        $("demo-status").textContent = "Alice’s private key has been placed in the key field. Decrypting…";
+        await decryptMessage();
+        if ($("plaintext-output").value) $("demo-status").textContent = "Alice decrypted the message with her private key.";
+      });
+      $("copy-public").addEventListener("click", () => copyText(generatedPublicPem, "Public key"));
+      $("download-public").addEventListener("click", () => downloadText(generatedPublicPem, "keyroom-public-key.pem"));
+      $("download-private").addEventListener("click", () => {
+        if (!generatedPrivatePem) { toast("Generate a key pair first."); return; }
+        downloadText(generatedPrivatePem, "keyroom-private-key.pem");
+        $("private-warning").style.display = "flex";
+      });
+      $("reveal-private").addEventListener("click", (event) => {
+        const privateField = $("generated-private");
+        const visible = privateField.style.display !== "none";
+        privateField.style.display = visible ? "none" : "block";
+        event.currentTarget.textContent = visible ? "Reveal private key" : "Hide private key";
+        if (!visible) $("private-warning").style.display = "flex";
+      });
+      $("copy-ciphertext").addEventListener("click", () => copyText($("ciphertext-output").value, "Encrypted package"));
+      $("download-ciphertext").addEventListener("click", () => downloadText($("ciphertext-output").value, "keyroom-encrypted-message.txt"));
+      $("fill-own-public").addEventListener("click", () => {
+        if (!generatedPublicPem) { toast("Generate a key pair first."); return; }
+        $("recipient-public").value = generatedPublicPem;
+        toast("Your public key is ready to use.");
+      });
+      $("use-generated-button").addEventListener("click", () => {
+        if (!generatedPrivatePem) { toast("Generate a key pair first."); return; }
+        $("private-input").value = generatedPrivatePem;
+        setStatus("decrypt-status", "Private key added to the field. Decrypt will use this key.", "success");
+      });
+      $("private-input").addEventListener("input", () => setStatus("decrypt-status", ""));
+
+      if (!window.isSecureContext || !crypto?.subtle) {
+        setStatus("key-status", "This browser requires a secure context for cryptography. Open the website on HTTPS or localhost.", "error");
+        $("generate-button").disabled = true;
+      }
+    })();
+  </script>
+</body>
+</html>
